@@ -9,10 +9,26 @@ import perceptron_Carlos as Perceptron
 X_train = np.load("Xtrain1.npy")
 y_train = np.load("Ytrain1.npy")
 
+########    Counting labels    ##########
+train_total = y_train.shape[0]
+n_craters = 0
+n_plain   = 0
+for element in y_train:
+    if element== 0:
+        n_plain += 1
+    else: n_craters += 1
+
+print("DESCRIPTION OF DATASET")
+print()
+print("Number of training images = " + str(train_total))
+print("Percentage of craters is " + str(100*n_craters/train_total) + " %")
+print("Percentage of plain is " + str(100*n_plain/train_total) + " %")
+
+
 ########   Shortening for now  ##########
 print("Shape of input data is " + str(X_train.shape))
-#X_train = X_train[0:30]
-#y_train = y_train[0:30]
+X_train = X_train[0:30]
+y_train = y_train[0:30]
 
 ####       Normalize       #################################
 X_train_means = np.mean(X_train,axis = 0)    #Important for finale!
@@ -56,7 +72,7 @@ P.learning_step = 2
 P.steepness = 10
 
 
-print(np.array(y_train))
+#print(np.array(y_train))
 print("----------------------------------------")
 n_epochs = 10
 all_errors =[]
