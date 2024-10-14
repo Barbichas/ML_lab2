@@ -2,6 +2,7 @@
 #Machine Learning lab
 #The goal is to identify craters in pictures of mars
 
+import random
 import numpy as np
 import matplotlib.pyplot as plt
 import two_layer_perceptron_Carlos as Perceptron
@@ -21,14 +22,65 @@ for element in y_train:
 print("DESCRIPTION OF DATASET")
 print()
 print("Number of training images = " + str(train_total))
+print("Number of craters = " + str(n_craters))
+print("Number of plain= " + str(n_plain))
 print("Percentage of craters is " + str(100*n_craters/train_total) + " %")
 print("Percentage of plain is " + str(100*n_plain/train_total) + " %")
 
+########   Function to even number of craters and plains  ##############
+def equalize_crat_and_plain(X, y):
+    craters = list(X[y==1] )
+    plains  = list(X[y==0] )
+
+    while(1):
+        #print("n_ craters = " + str(len(craters)))
+        #print("n_plains = " + str(len(plains)))
+        if len(craters) == len(plains) :
+            break
+        craters.pop(random.randint(0,len(craters)-1))
+        
+        if len(craters) == len(plains) :
+            break
+        aux = plains[random.randint(0, len(plains)-1)]
+        plains.append(aux)
+
+    X_final = craters + plains 
+    random.shuffle(X_final)
+    #print(X_final)
+
+    y_final = []
+    for i in range( len(X_final) ):
+        if any(np.array_equal(X_final[i], element) for element in craters ):
+            y_final.append(1)
+        else:
+            y_final.append(0)
+    
+    X_final = np.array(X_final)
+    y_final = np.array(y_final)
+
+    return X_final, y_final
+
+X_train, y_train = equalize_crat_and_plain(X_train,y_train)
 
 ########   Shortening for now  ##########
 print("Shape of input data is " + str(X_train.shape))
-X_train = X_train[0:10]
-y_train = y_train[0:10]
+#X_train = X_train[0:30]
+#y_train = y_train[0:30]
+train_total = y_train.shape[0]
+n_craters = 0
+n_plain   = 0
+for element in y_train:
+    if element== 0:
+        n_plain += 1
+    else: n_craters += 1
+
+print("DESCRIPTION OF DATASET")
+print()
+print("Number of training images = " + str(train_total))
+print("Number of craters = " + str(n_craters))
+print("Number of plain= " + str(n_plain))
+print("Percentage of craters is " + str(100*n_craters/train_total) + " %")
+print("Percentage of plain is " + str(100*n_plain/train_total) + " %")
 
 ####       Normalize       #################################
 X_train_means = np.mean(X_train,axis = 0)    #Important for finale!
@@ -57,7 +109,7 @@ if(0):
     for i in range(20):
         display_image(X_train[i],48,48)
         
-        if(Y_train[i]==1):
+        if(y_train[i]==1):
             plt.title("Image "+ str(i) + " has a cratter")
         else:
             plt.title("Image "+ str(i) + " is clean")
@@ -67,14 +119,14 @@ P = Perceptron.two_layer_perceptron()
 P.data = X_train_normalised
 P.labels = y_train_normalised
 P.learning_step = 0.5
-P.n_inner_sommas = 37
+P.n_inner_sommas = 101
 P.weight_init()
 
 
 
 #print(np.array(y_train))
 print("----------------------------------------")
-n_epochs = 200
+n_epochs = 0
 all_errors =[]
 for i in range(n_epochs):
     #print("----------------------------------")
