@@ -175,7 +175,6 @@ class two_layer_perceptron:
                     derivative_i = (self.steepness[i])*V[k][i]*(1-V[k][i])
                     deltas_ki[k][i-1] = current_delta_k * self.w[i-1] * derivative_i
                 
-        #print("Preditions = " +str( [self.prediction(self.data[k]) for k in range(len(self.data))] )  )
         #corrections on top layer weights
         for i in range( self.n_inner_sommas ):
             for k in range(len(self.data)):
