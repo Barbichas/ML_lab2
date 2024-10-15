@@ -78,8 +78,10 @@ def equalize_crat_and_plain(X, y):
 print("Equalize number of images")
 X_train, y_train = equalize_crat_and_plain(X_train,y_train)
 
-### define the validation and training sets  ########
-percent_val = 5
+####################################################################
+### define the validation and training sets  #######################
+####################################################################
+percent_val = 30
 n_val = int(percent_val * len(X_train) / 100)
 
 print("Use " + str(n_val) + " images for validation")
@@ -147,42 +149,61 @@ if(0):
 ################################################################################
 ###############              Decision Tree
 ###############################################################################3
+print()
+print("----------------------------")
+print("Random Decision Tree")
+print()
 
+random_state_max = 100
 
-clf = DecisionTreeClassifier(random_state=42)
-clf.fit(X_train, y_train)
+f1_train = []
+f1_val = []
+if (1):
+    for rs in range(1,random_state_max):
+        if(rs%10==0):
+            print("Number of random states = " + str(rs) )
+        clf = DecisionTreeClassifier(random_state=rs)
+        clf.fit(X_train, y_train)
 
-y_pred = clf.predict(X_train)
-TP = 0
-FN = 0
-FP = 0
-for i in y_pred:
-    delta = y_train[i] - y_pred[i]
-    if delta == 0:
-        TP += 1
-    elif delta == 1:
-        FN += 1
-    else:
-        FP += 1
-F1 = 2*TP/(2*TP+FN+FP)
-print("Number of errors is " + str(FN+FP) + " out of " + str(len(X_train)) + "images")
-print("Training F1 is " + str(F1))
+        y_pred = clf.predict(X_train)
+        TP = 0
+        FN = 0
+        FP = 0
+        for i in y_pred:
+            delta = y_train[i] - y_pred[i]
+            if delta == 0:
+                TP += 1
+            elif delta == 1:
+                FN += 1
+            else:
+                FP += 1
+        F1 = 2*TP/(2*TP+FN+FP)
+        f1_train.append(F1)
+        #print("Number of errors is " + str(FN+FP) + " out of " + str(len(X_train)) + "images")
+        #print("Training F1 is " + str(F1))
 
-y_pred = clf.predict(X_val)
-TP = 0
-FN = 0
-FP = 0
-for i in y_pred:
-    delta = y_val[i] - y_pred[i]
-    if delta == 0:
-        TP += 1
-    elif delta == 1:
-        FN += 1
-    else:
-        FP += 1
-F1 = 2*TP/(2*TP+FN+FP)
-print("Number of errors is " + str(FN+FP) + " out of " + str(len(X_val)) + "images")
-print("Validation F1 is " + str(F1))
+        y_pred = clf.predict(X_val)
+        TP = 0
+        FN = 0
+        FP = 0
+        for i in y_pred:
+            delta = y_val[i] - y_pred[i]
+            if delta == 0:
+                TP += 1
+            elif delta == 1:
+                FN += 1
+            else:
+                FP += 1
+        F1 = 2*TP/(2*TP+FN+FP)
+        f1_val.append(F1)
+        #print("Number of errors is " + str(FN+FP) + " out of " + str(len(X_val)) + "images")
+        #print("Validation F1 is " + str(F1))
 
-
+plt.plot(f1_train,color = "blue",label = "Train")
+plt.plot(f1_val  ,color = "red" ,label = "Validation")
+plt.legend()
+plt.xlabel("Number of random states")
+plt.ylabel("F1")
+plt.title("F1 metric versus number of random states(Random Decision Tree)")
+plt.show()
 
