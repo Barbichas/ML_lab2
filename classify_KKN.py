@@ -149,7 +149,7 @@ if(0):
         plt.figure()
 
 ################################################################################
-###############              KNN
+###############              K Nearest Neighbours
 ###############################################################################3
 def compute_hog(image):
     """ Compute HOG features and return them along with the visualized image. """
