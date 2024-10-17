@@ -199,61 +199,92 @@ from keras.models import load_model
 
 # Initialize the CNN model
 model = Sequential()
-train_and_save = 1      ### se quiseres treinar
+f1_scores_train = []
+f1_scores_val = []
+accur_scores_train = []
+accur_scores_val = []
+max_epoch = 80
 
-if (train_and_save):
-    # 1st Convolutional Layer + Pooling
-    model.add(Conv2D(32, (3, 3), input_shape=(48, 48, 1), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    # 2nd Convolutional Layer + Pooling
-    model.add(Conv2D(64, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+# 1st Convolutional Layer + Pooling
+model.add(Conv2D(32, (3, 3), input_shape=(48, 48, 1), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    # 3rd Convolutional Layer + Pooling
-    model.add(Conv2D(128, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
+# 2nd Convolutional Layer + Pooling
+model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    # Flatten the layers
-    model.add(Flatten())
+# 3rd Convolutional Layer + Pooling
+model.add(Conv2D(128, (3, 3), activation='relu'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
 
-    # Fully connected layer (Dense layer)
-    model.add(Dense(units=128, activation='relu'))
-    model.add(Dropout(0.5))  # Dropout for regularization
+# Flatten the layers
+model.add(Flatten())
 
-    # Output layer (Sigmoid for binary classification)
-    model.add(Dense(units=1, activation='sigmoid'))
+# Fully connected layer (Dense layer)
+model.add(Dense(units=128, activation='relu'))
+model.add(Dropout(0.5))  # Dropout for regularization
 
-    # Compile the model
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+# Output layer (Sigmoid for binary classification)
+model.add(Dense(units=1, activation='sigmoid'))
 
+# Compile the model
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+for n_epochs in range(max_epoch):
     # Train the model
     history = model.fit(
         X_train,
         y_train,
         steps_per_epoch=len(X_train),
-        epochs=7,  # Number of epochs (adjust as needed)
+        epochs=1,  # Number of epochs (adjust as needed)
         validation_data=(X_val , y_val),
         validation_steps=len(X_val)
     )
-    # Save the model
-    model.save('cnn_binary_classifier.h5')
+    # Evaluate the model on the training set
+    train_loss, train_acc = model.evaluate(X_train , y_train)
+    print(f"Train Accuracy: {train_acc}")
+    accur_scores_train.append(train_acc)
+    # Make predictions
+    y_train_pred = model.predict(X_train)
+    # Convert predictions to binary values (0 or 1)
+    y_train_pred = (y_train_pred > 0.5).astype(int)
+    # Calculate F1 score
+    f1 = f1_score(y_train, y_train_pred)
+    print(f"Validation F1 Score: {f1}")
+    f1_scores_train.append(f1)
 
-else:
-    model = load_model('cnn_binary_classifier.h5')
+    # Evaluate the model on the validation set
+    val_loss, val_acc = model.evaluate(X_val , y_val)
+    print(f"Test Accuracy: {val_acc}")
+    accur_scores_val.append(val_acc)
+    # Make predictions
+    y_val_pred = model.predict(X_val)
+    # Convert predictions to binary values (0 or 1)
+    y_val_pred = (y_val_pred > 0.5).astype(int)
+    # Calculate F1 score
+    f1 = f1_score(y_val, y_val_pred)
+    print(f"Validation F1 Score: {f1}")
+    f1_scores_val.append(f1)
 
-# Evaluate the model on the validation/test set
-test_loss, test_acc = model.evaluate(X_val , y_val)
-print(f"Test Accuracy: {test_acc}")
+## plotting error with gradient steps  ##
+plt.plot(accur_scores_train, color='blue',label = "Training")
+plt.plot(accur_scores_val  , color= 'red',label = "Validation")
+plt.xlabel('Number of epochs')
+plt.ylabel('Accuracy score')
+plt.title('Accuracy score evolution with training epochs')
+plt.legend()
+plt.figure()
 
-# Make predictions
-y_val_pred = model.predict(X_val)
-# Convert predictions to binary values (0 or 1)
-y_val_pred = (y_val_pred > 0.5).astype(int)
+plt.plot(f1_scores_train, color='blue',label = "Training")
+plt.plot(f1_scores_val  , color= 'red',label = "Validation")
+plt.xlabel('Number of epochs')
+plt.ylabel('F1 score')
+plt.title('F1 score evolution with training epochs')
+plt.legend()
+plt.show()
 
-# Calculate F1 score
-f1 = f1_score(y_val, y_val_pred)
-print(f"Validation F1 Score: {f1}")
+
 
 
 
