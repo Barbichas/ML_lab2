@@ -204,7 +204,7 @@ f1_scores_train = []
 f1_scores_val = []
 accur_scores_train = []
 accur_scores_val = []
-max_epoch = 40
+
 
 
 # 1st Convolutional Layer + Pooling
@@ -229,64 +229,57 @@ model.add(Dropout(0.5))  # Dropout for regularization
 # Output layer (Sigmoid for binary classification)
 model.add(Dense(units=1, activation='sigmoid'))
 
-learning_rate = 0.001  # Set your desired learning rate
-# Compile the model
-optimizer = Adam(learning_rate=learning_rate)
-model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+############################################################################
+################    Heavy calculations below  ##############################
+############################################################################
 
-for n_epochs in range(max_epoch):
-    # Train the model
-    history = model.fit(
-        X_train,
-        y_train,
-        steps_per_epoch=len(X_train),
-        epochs=1,  # Number of epochs (adjust as needed)
-        validation_data=(X_val , y_val),
-        validation_steps=len(X_val)
-    )
-    # Evaluate the model on the training set
-    train_loss, train_acc = model.evaluate(X_train , y_train)
-    print(f"Train Accuracy: {train_acc}")
-    accur_scores_train.append(train_acc)
-    # Make predictions
-    y_train_pred = model.predict(X_train)
-    # Convert predictions to binary values (0 or 1)
-    y_train_pred = (y_train_pred > 0.5).astype(int)
-    # Calculate F1 score
-    f1 = f1_score(y_train, y_train_pred)
-    print(f"Validation F1 Score: {f1}")
-    f1_scores_train.append(f1)
+Learning_rates = [0.0015 , 0.001 , 0.0075 , 0.0005 , 0.00025  ]# The learning rate
+Batch_sizes = [2**5, 2**6, 2**7, 2**8 , 2**9, 2**10 ]# The batch size
+max_epoch = 40
 
-    print(f"Learning Rate:{learning_rate}")
-    # Evaluate the model on the validation set
-    val_loss, val_acc = model.evaluate(X_val , y_val)
-    print(f"Validation Accuracy: {val_acc}")
-    accur_scores_val.append(val_acc)
-    # Make predictions
-    y_val_pred = model.predict(X_val)
-    # Convert predictions to binary values (0 or 1)
-    y_val_pred = (y_val_pred > 0.5).astype(int)
-    # Calculate F1 score
-    f1 = f1_score(y_val, y_val_pred)
-    print(f"Validation F1 Score: {f1}")
-    f1_scores_val.append(f1)
+for learning_rate in Learning_rates:
+    for current_batch_size in Batch_sizes:
 
-## plotting error with gradient steps  ##
-#plt.plot(accur_scores_train, color='blue',label = "Training")
-#plt.plot(accur_scores_val  , color= 'red',label = "Validation")
-#plt.xlabel('Number of epochs')
-#plt.ylabel('Accuracy score')
-#plt.title('Accuracy score evolution with training epochs')
-#plt.legend()
-#plt.figure()
+        log_file = open('results_learn_'+str(learning_rate)+'.txt', 'w')
+        # Compile the model
+        optimizer = Adam(learning_rate=learning_rate)
+        model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
 
-#plt.plot(f1_scores_train, color='blue',label = "Training")
-#plt.plot(f1_scores_val  , color= 'red',label = "Validation")
-#plt.xlabel('Number of epochs')
-#plt.ylabel('F1 score')
-#plt.title('F1 score evolution with training epochs')
-#plt.legend()
-#plt.show()
+        for n_epochs in range(max_epoch):
+            # Train the model
+            history = model.fit(
+                X_train,
+                y_train,
+                #steps_per_epoch=len(X_train),
+                epochs=1,  # Number of epochs (adjust as needed)
+                validation_data=(X_val , y_val),
+                #validation_steps=len(X_val),
+                batch_size = current_batch_size
+            )
+
+            print(f"Learning Rate:{learning_rate}")
+            # Evaluate the model on the validation set
+            val_loss, val_acc = model.evaluate(X_val , y_val)
+            print(f"Validation Accuracy: {val_acc}")
+            accur_scores_val.append(val_acc)
+            # Make predictions
+            y_val_pred = model.predict(X_val)
+            # Convert predictions to binary values (0 or 1)
+            y_val_pred = (y_val_pred > 0.5).astype(int)
+            # Calculate F1 score
+            f1 = f1_score(y_val, y_val_pred)
+            print(f"Validation F1 Score: {f1}")
+            f1_scores_val.append(f1)
+
+            log_file.write("---------------------------------------------------\n")
+            log_file.write( f"Learning Rate:{learning_rate}\n" )
+            log_file.write( f"Batch Size: {current_batch_size}\n" )
+            log_file.write( f"Epoch number:{n_epochs}\n" )
+            log_file.write( f"Validation Accuracy: {val_acc}\n" )
+            log_file.write( f"Validation F1 Score: {f1}\n" )
+            log_file.write( "\n")
+    
+    log_file.close()
 
 
 

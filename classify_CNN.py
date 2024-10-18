@@ -196,6 +196,7 @@ from keras.layers import Conv2D, MaxPooling2D
 from keras.layers import Activation, Dropout, Flatten, Dense
 from keras import backend as K
 from keras.models import load_model
+from keras.optimizers import Adam
 
 # Initialize the CNN model
 model = Sequential()
@@ -225,14 +226,16 @@ if (train_and_save):
     model.add(Dense(units=1, activation='sigmoid'))
 
     # Compile the model
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+    learning_rate = 0.0005  # Set your desired learning rate
+    optimizer = Adam(learning_rate=learning_rate)
+    model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
 
     # Train the model
     history = model.fit(
         X_train,
         y_train,
         steps_per_epoch=len(X_train),
-        epochs=7,  # Number of epochs (adjust as needed)
+        epochs=10,  # Number of epochs (adjust as needed)
         validation_data=(X_val , y_val),
         validation_steps=len(X_val)
     )
@@ -253,7 +256,7 @@ y_val_pred = (y_val_pred > 0.5).astype(int)
 
 # Calculate F1 score
 f1 = f1_score(y_val, y_val_pred)
-print(f"Validation F1 Score: {f1}")
+print(f"Learning rate: {learning_rate} Validation F1 Score: {f1}")
 
 
 
