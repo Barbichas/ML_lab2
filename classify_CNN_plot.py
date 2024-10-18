@@ -14,7 +14,7 @@ from sklearn.metrics import f1_score
 import random
 import matplotlib.pyplot as plt
 
-
+random.seed(42)
 X_train = np.load("Xtrain1.npy")
 y_train = np.load("Ytrain1.npy")
 X_test  = np.load("Xtest1.npy")
@@ -204,7 +204,7 @@ f1_scores_train = []
 f1_scores_val = []
 accur_scores_train = []
 accur_scores_val = []
-max_epoch = 40
+
 
 
 # 1st Convolutional Layer + Pooling
@@ -229,24 +229,32 @@ model.add(Dropout(0.5))  # Dropout for regularization
 # Output layer (Sigmoid for binary classification)
 model.add(Dense(units=1, activation='sigmoid'))
 
-learning_rate = 0.001  # Set your desired learning rate
+learning_rate = 0.001
+max_epoch = 33
+our_batch_size = 64
+
 # Compile the model
 optimizer = Adam(learning_rate=learning_rate)
 model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+
+all_train_loss =[]
+all_val_loss = []
 
 for n_epochs in range(max_epoch):
     # Train the model
     history = model.fit(
         X_train,
         y_train,
-        steps_per_epoch=len(X_train),
+        #steps_per_epoch=len(X_train),
         epochs=1,  # Number of epochs (adjust as needed)
         validation_data=(X_val , y_val),
-        validation_steps=len(X_val)
+        #validation_steps=len(X_val)
+        batch_size = our_batch_size
     )
     # Evaluate the model on the training set
     train_loss, train_acc = model.evaluate(X_train , y_train)
     print(f"Train Accuracy: {train_acc}")
+    all_train_loss.append(train_loss)
     accur_scores_train.append(train_acc)
     # Make predictions
     y_train_pred = model.predict(X_train)
@@ -254,13 +262,14 @@ for n_epochs in range(max_epoch):
     y_train_pred = (y_train_pred > 0.5).astype(int)
     # Calculate F1 score
     f1 = f1_score(y_train, y_train_pred)
-    print(f"Validation F1 Score: {f1}")
+    print(f"Train F1 Score: {f1}")
     f1_scores_train.append(f1)
 
     print(f"Learning Rate:{learning_rate}")
     # Evaluate the model on the validation set
     val_loss, val_acc = model.evaluate(X_val , y_val)
     print(f"Validation Accuracy: {val_acc}")
+    all_val_loss.append(val_loss)
     accur_scores_val.append(val_acc)
     # Make predictions
     y_val_pred = model.predict(X_val)
@@ -272,21 +281,29 @@ for n_epochs in range(max_epoch):
     f1_scores_val.append(f1)
 
 ## plotting error with gradient steps  ##
-#plt.plot(accur_scores_train, color='blue',label = "Training")
-#plt.plot(accur_scores_val  , color= 'red',label = "Validation")
-#plt.xlabel('Number of epochs')
-#plt.ylabel('Accuracy score')
-#plt.title('Accuracy score evolution with training epochs')
-#plt.legend()
-#plt.figure()
+plt.plot(accur_scores_train, color='blue',label = "Training")
+plt.plot(accur_scores_val  , color= 'red',label = "Validation")
+plt.xlabel('Number of epochs')
+plt.ylabel('Accuracy score')
+plt.title('Accuracy score evolution with training epochs')
+plt.legend()
+plt.figure()
 
-#plt.plot(f1_scores_train, color='blue',label = "Training")
-#plt.plot(f1_scores_val  , color= 'red',label = "Validation")
-#plt.xlabel('Number of epochs')
-#plt.ylabel('F1 score')
-#plt.title('F1 score evolution with training epochs')
-#plt.legend()
-#plt.show()
+plt.plot(all_train_loss, color='blue',label = "Training")
+plt.plot(all_val_loss  , color= 'red',label = "Validation")
+plt.xlabel('Number of epochs')
+plt.ylabel('Loss score')
+plt.title('Loss score evolution with training epochs')
+plt.legend()
+plt.figure()
+
+plt.plot(f1_scores_train, color='blue',label = "Training")
+plt.plot(f1_scores_val  , color= 'red',label = "Validation")
+plt.xlabel('Number of epochs')
+plt.ylabel('F1 score')
+plt.title('F1 score evolution with training epochs')
+plt.legend()
+plt.show()
 
 
 

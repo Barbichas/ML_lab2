@@ -17,7 +17,12 @@ import matplotlib.pyplot as plt
 random.seed(42)
 X_train = np.load("Xtrain1.npy")
 y_train = np.load("Ytrain1.npy")
+X_extra = np.load("Xtrain1_extra.npy")
+y_extra = np.load( "y_extra.npy" )
 X_test  = np.load("Xtest1.npy")
+
+X_train = np.concatenate( (X_train , X_extra) )
+y_train = np.concatenate( (y_train , y_extra) )
 
 ####################################################################
 ### define the validation and training sets  #######################
@@ -155,9 +160,9 @@ def add_negative_images(X,y):
 
 print("Equalize number of images")
 X_train, y_train = equalize_crat_and_plain(X_train,y_train)
-#X_train, y_train = add_transpose_images(X_train,y_train)
-#X_train, y_train = add_bright_images(X_train, y_train)
-#X_train , y_train = add_negative_images(X_train, y_train)
+X_train, y_train = add_transpose_images(X_train,y_train)
+X_train, y_train = add_bright_images(X_train, y_train)
+X_train , y_train = add_negative_images(X_train, y_train)
 
 ################   Recount      ##################
 train_total = y_train.shape[0]
@@ -202,6 +207,8 @@ from keras.optimizers import Adam
 model = Sequential()
 train_and_save = 1      ### se quiseres treinar
 
+
+
 if (train_and_save):
     # 1st Convolutional Layer + Pooling
     model.add(Conv2D(32, (3, 3), input_shape=(48, 48, 1), activation='relu'))
@@ -235,7 +242,7 @@ if (train_and_save):
         X_train,
         y_train,
         #steps_per_epoch=len(X_train),
-        epochs=30,  # Number of epochs (adjust as needed)
+        epochs=34,  # Number of epochs (adjust as needed)
         validation_data=(X_val , y_val),
         #validation_steps=len(X_val)
         batch_size = 64
@@ -259,7 +266,10 @@ y_val_pred = (y_val_pred > 0.5).astype(int)
 f1 = f1_score(y_val, y_val_pred)
 print(f"Learning rate: {learning_rate} Validation F1 Score: {f1}")
 
-
+#############################3
+X_test = np.array(X_test).reshape(X_test.shape[0],48 , 48)
+X_test = X_test.reshape((X_test.shape[0], X_test.shape[1], X_test.shape[2], 1))
+y_test_pred = model.predict(X_test)
 
 
 

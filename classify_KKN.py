@@ -10,10 +10,27 @@ from scipy.spatial.distance import cosine
 from skimage.feature import hog
 from skimage import exposure
 from sklearn.metrics import euclidean_distances
+from sklearn.metrics import f1_score
+
 
 X_train = np.load("Xtrain1.npy")
 y_train = np.load("Ytrain1.npy")
 X_test  = np.load("Xtest1.npy")
+
+
+####################################################################
+### define the validation and training sets  #######################
+####################################################################
+percent_val = 30
+n_val = int(percent_val * len(X_train) / 100)
+
+print("Use " + str(n_val) + " images for validation")
+X_val = X_train[0:n_val]
+y_val = y_train[0:n_val]
+
+X_train = X_train[n_val:]
+y_train = y_train[n_val:]
+
 
 ########    Counting labels    ##########
 train_total = y_train.shape[0]
@@ -28,13 +45,15 @@ print()
 print("DESCRIPTION OF DATASET")
 print()
 print("Number of training images = " + str(train_total))
+print("Number of validation images = " +str(X_val.shape[0]) + str(" ( ") + str(percent_val) + " %)")
 print("Number of craters = " + str(n_craters))
 print("Number of plain= " + str(n_plain))
 print("Percentage of craters is " + str(100*n_craters/train_total) + " %")
 print("Percentage of plain is " + str(100*n_plain/train_total) + " %")
 
+
 ####### Function to rotate image  ###########
-def flip_image_Sofia(image):
+def rotate_image_Sofia(image):
     for i in range(int(len(image)/2)):
         ii = len(image) -1 - i
 
@@ -43,23 +62,46 @@ def flip_image_Sofia(image):
         image[ii] = aux
     return image
 
+####### Function for brightness variations image  ###########
+def bright_image(image):
+    fator_brilho = 1.5
+    image_bright = np.clip(image * fator_brilho, 0, 255)#.astype(np.uint8)
+
+    #cv2.imshow('Imagem Original', image)
+    #cv2.imshow('Imagem com Mais Brilho', image_bright)
+
+    return image_bright
+
+####### Function for transposing the image   ###########
+def transpose_image(image):
+    matrix = np.array(image).reshape(48, 48)
+    transpose = np.transpose(matrix)
+    return np.array(transpose).reshape(48**2)
+
+#######  Function for negative           ############
+def negative_image(image):
+    negative = [255-pixel for pixel in image ]
+    return np.array(negative)
+
 ########   Even number of craters and plains  ##############
 def equalize_crat_and_plain(X, y):
     craters = list(X[y==1] )
     plains  = list(X[y==0] )
 
     while(1):
-
-        if len(craters) == len(plains) :
-            break
-        #remove random crater
-        craters.pop(random.randint(0,len(craters)-1))
         
         if len(craters) == len(plains) :
             break
         #add random plain
         aux = plains[random.randint(0, len(plains)-1)]
-        aux = flip_image_Sofia(aux)
+        aux = rotate_image_Sofia(aux)
+        plains.append(aux)
+
+        if len(craters) == len(plains) :
+            break
+        #add random plain 
+        aux = plains[random.randint(0, len(plains)-1)]
+        aux = bright_image(aux)
         plains.append(aux)
 
     #add labels to the data
@@ -79,19 +121,42 @@ def equalize_crat_and_plain(X, y):
 
     return X_final, y_final
 
+def add_transpose_images(X,y):
+    more_X = []
+    for image in X:
+        more_X.append(transpose_image(image))
+    more_X = np.array(more_X)
+    X_final = np.concatenate( (X,more_X) )
+    y_final = np.concatenate( (y,y) )
+
+    return X_final , y_final
+
+def add_bright_images(X,y):
+    more_X = []
+    for image in X:
+        more_X.append(bright_image(image))
+    more_X = np.array(more_X)
+    X_final = np.concatenate( (X,more_X) )
+    y_final = np.concatenate( (y,y) )
+
+    return X_final , y_final
+
+def add_negative_images(X,y):
+    more_X = []
+    for image in X:
+        more_X.append(bright_image(image))
+    more_X = np.array(more_X)
+    X_final = np.concatenate( (X,more_X) )
+    y_final = np.concatenate( (y,y) )
+
+    return X_final , y_final
+
+
 print("Equalize number of images")
 X_train, y_train = equalize_crat_and_plain(X_train,y_train)
-
-### define the validation and training sets  ########
-percent_val = 5
-n_val = int(percent_val * len(X_train) / 100)
-
-print("Use " + str(n_val) + " images for validation")
-X_val = X_train[0:n_val]
-y_val = y_train[0:n_val]
-
-X_train = X_train[n_val:]
-y_train = y_train[n_val:]
+#X_train, y_train = add_transpose_images(X_train,y_train)
+#X_train, y_train = add_bright_images(X_train, y_train)
+#X_train , y_train = add_negative_images(X_train, y_train)
 
 ################   Recount      ##################
 train_total = y_train.shape[0]
@@ -113,44 +178,11 @@ print("Number of plain= " + str(n_plain))
 print("Percentage of craters is " + str(100*n_craters/train_total) + " %")
 print("Percentage of plain is " + str(100*n_plain/train_total) + " %")
 
-
-####       Normalize       #################################
-X_train_means = np.mean(X_train,axis = 0)    #Important for finale!
-X_train_centered = X_train - X_train_means
-X_train_centered_maxs = np.max(np.abs(X_train_centered), axis=0)  # Important for finale!
-X_train_normalised = X_train_centered / X_train_centered_maxs
-X_train_normalised_std_devs = np.std(X_train_centered, axis=0 ) #Important for finale!
-X_train_normalised = X_train_normalised/ X_train_normalised_std_devs
-
-y_train_mean = np.mean(y_train)          #Important for finale!
-y_train_centered = y_train - y_train_mean
-y_train_centered_max = np.max(y_train_centered)
-y_train_normalised = y_train_centered / y_train_centered_max
-y_train_normalised_std_dev = np.std(y_train_centered) #use standard deviation to normalise gaussian noise
-y_train_normalised = y_train_normalised/ y_train_normalised_std_dev
-
-def display_image(vector, L, H):
-    # Convert the vector to a 2D array (image) with shape (H, L)
-    image = np.array(vector).reshape(H, L)
-
-    # Display the image using matplotlib
-    plt.imshow(image, cmap='gray')  # Using 'gray' colormap for grayscale images
-    plt.axis('off')  # Hide axes
-
-###  look at some images  ###
-if(0):
-    for i in range(20):
-        display_image(X_train[i],48,48)
-        
-        if(y_train[i]==1):
-            plt.title("Image "+ str(i) + " has a cratter")
-        else:
-            plt.title("Image "+ str(i) + " is clean")
-        plt.figure()
-
 ################################################################################
 ###############              K Nearest Neighbours
 ###############################################################################3
+
+#function to get features
 def compute_hog(image):
     """ Compute HOG features and return them along with the visualized image. """
     features, hog_image = hog(image, 
@@ -178,13 +210,11 @@ def distance_images(image1 , image2):
 
 
 k_max = 37
-all_errors=np.zeros(k_max-1)
-TP = np.zeros(k_max-1)
-FN = np.zeros(k_max-1)
-FP = np.zeros(k_max-1)
+y_val_pred = np.zeros( [k_max , len(X_val)] )
+features_train = np.array( [compute_hog(np.array(X_train[i]).reshape(48, 48))[0] for i in range(len(X_train))] )
 for i_val in range(len(X_val)): #chech all validation images
     features_i = compute_hog(np.array(X_val[i_val]).reshape(48, 48))[0]
-    distances = [(distance_images(features_i, compute_hog(np.array(X_train[i]).reshape(48, 48))[0] ),y_train[i]) for i in range(len(X_train))]
+    distances = [(distance_images(features_i, features_train) ,y_train[i]) for i in range(len(X_train))]
     distances.sort()
     if(i_val%10==0):
         print("Checking image = " + str(i_val))
@@ -196,22 +226,17 @@ for i_val in range(len(X_val)): #chech all validation images
             voting = 0
         else:
             voting = 1
-        if y_val[i_val]-voting == 0:
-            TP += 1
-        elif y_val[i_val]-voting == 1:
-            FN += 1
-            all_errors[k] += 1
-        else:
-            FP +=1
-            all_errors[k] += 1 
+            y_val_pred[i_val][k] = voting
+        
     
-all_errors = [all_errors[k]*100/len(X_val) for k in range(1,k_max-1)]
-all_f1     = [2*TP[k] /(2*TP[k]+FP[k]+FN[k]) for k in range(1,k_max-1) ]
+all_errors = [np.mean(abs(y_val - y_val_pred[k])) for k in range( k_max ) ]
+all_f1     = [f1_score(y_val , y_val_pred[k]) for k in range( k_max ) ]
 
 
 
 ## plotting error with gradient steps  ##
-plt.plot(all_errors, color='blue')
+plt.plot(all_errors, color='blue' , label = "Accuracy")
+plt.plot(all_f1 , color= "red", label= "F1")
 plt.xlabel('K neighbours used')
 plt.ylabel('Number of errors(%)')
 plt.title('Error percentage with k neighbours')
