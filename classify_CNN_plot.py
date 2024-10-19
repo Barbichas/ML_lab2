@@ -155,9 +155,9 @@ def add_negative_images(X,y):
 
 print("Equalize number of images")
 X_train, y_train = equalize_crat_and_plain(X_train,y_train)
-#X_train, y_train = add_transpose_images(X_train,y_train)
-#X_train, y_train = add_bright_images(X_train, y_train)
-#X_train , y_train = add_negative_images(X_train, y_train)
+X_train, y_train = add_transpose_images(X_train,y_train)
+X_train, y_train = add_bright_images(X_train, y_train)
+X_train , y_train = add_negative_images(X_train, y_train)
 
 ################   Recount      ##################
 train_total = y_train.shape[0]
@@ -198,6 +198,22 @@ from keras import backend as K
 from keras.models import load_model
 from keras.optimizers import Adam
 
+import tensorflow as tf
+
+def f1_score_tf(y_true, y_pred):
+    y_true = tf.cast(y_true, tf.float32)
+    y_pred = tf.round(y_pred)  # Round predictions to 0 or 1
+    tp = tf.reduce_sum(tf.round(tf.clip_by_value(y_true * y_pred, 0, 1)))  # True positives
+    predicted_positives = tf.reduce_sum(tf.round(tf.clip_by_value(y_pred, 0, 1)))  # Predicted positives
+    possible_positives = tf.reduce_sum(tf.round(tf.clip_by_value(y_true, 0, 1)))  # Actual positives
+
+    precision = tp / (predicted_positives + tf.keras.backend.epsilon())  # Precision calculation
+    recall = tp / (possible_positives + tf.keras.backend.epsilon())  # Recall calculation
+
+    f1_val = 2 * ((precision * recall) / (precision + recall + tf.keras.backend.epsilon()))  # F1 calculation
+    return f1_val
+
+
 # Initialize the CNN model
 model = Sequential()
 f1_scores_train = []
@@ -224,13 +240,13 @@ model.add(Flatten())
 
 # Fully connected layer (Dense layer)
 model.add(Dense(units=128, activation='relu'))
-model.add(Dropout(0.5))  # Dropout for regularization
+model.add(Dropout(0.7))  # Dropout for regularization
 
 # Output layer (Sigmoid for binary classification)
 model.add(Dense(units=1, activation='sigmoid'))
 
 learning_rate = 0.001
-max_epoch = 33
+max_epoch = 34
 our_batch_size = 64
 
 # Compile the model
@@ -279,6 +295,9 @@ for n_epochs in range(max_epoch):
     f1 = f1_score(y_val, y_val_pred)
     print(f"Validation F1 Score: {f1}")
     f1_scores_val.append(f1)
+
+# Save the model
+model.save('cnn_binary_classifier.h5')
 
 ## plotting error with gradient steps  ##
 plt.plot(accur_scores_train, color='blue',label = "Training")

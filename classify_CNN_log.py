@@ -14,7 +14,7 @@ from sklearn.metrics import f1_score
 import random
 import matplotlib.pyplot as plt
 
-
+random.seed(42)
 X_train = np.load("Xtrain1.npy")
 y_train = np.load("Ytrain1.npy")
 X_test  = np.load("Xtest1.npy")
@@ -234,16 +234,25 @@ model.add(Dense(units=1, activation='sigmoid'))
 ############################################################################
 
 Learning_rates = [0.0015 , 0.001 , 0.0075 , 0.0005 , 0.00025  ]# The learning rate
-Batch_sizes = [2**5, 2**6, 2**7, 2**8 , 2**9, 2**10 ]# The batch size
+Batch_sizes = [2**5, 2**6, 2**7, 2**8 ]# The batch size
 max_epoch = 40
 
-for learning_rate in Learning_rates:
-    for current_batch_size in Batch_sizes:
+'''
+#another possible loss function, did not yield better results than cross entropy
+import tensorflow as tf
+def dice_loss(y_true, y_pred):
+    y_true = tf.cast(y_true, tf.float32)
+    numerator = 2 * tf.reduce_sum(y_true * y_pred)
+    denominator = tf.reduce_sum(y_true + y_pred)
+    return 1 - numerator / (denominator + tf.keras.backend.epsilon())
+'''
 
-        log_file = open('results_learn_'+str(learning_rate)+'.txt', 'w')
+for learning_rate in Learning_rates:
+    log_file = open('results_learn_'+str(learning_rate)+'.txt', 'w')
+    for current_batch_size in Batch_sizes:
         # Compile the model
         optimizer = Adam(learning_rate=learning_rate)
-        model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer=optimizer, loss=dice_loss, metrics=['accuracy'])
 
         for n_epochs in range(max_epoch):
             # Train the model
@@ -258,6 +267,7 @@ for learning_rate in Learning_rates:
             )
 
             print(f"Learning Rate:{learning_rate}")
+            print(f"Batch Size: {current_batch_size}")
             # Evaluate the model on the validation set
             val_loss, val_acc = model.evaluate(X_val , y_val)
             print(f"Validation Accuracy: {val_acc}")

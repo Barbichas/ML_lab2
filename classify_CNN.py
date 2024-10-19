@@ -220,7 +220,7 @@ if (train_and_save):
 
     # Fully connected layer (Dense layer)
     model.add(Dense(units=128, activation='relu'))
-    model.add(Dropout(0.5))  # Dropout for regularization
+    model.add(Dropout(0.8))  # Dropout for regularization
 
     # Output layer (Sigmoid for binary classification)
     model.add(Dense(units=1, activation='sigmoid'))
@@ -235,10 +235,10 @@ if (train_and_save):
         X_train,
         y_train,
         #steps_per_epoch=len(X_train),
-        epochs=30,  # Number of epochs (adjust as needed)
+        epochs=8,  # Number of epochs (adjust as needed)
         validation_data=(X_val , y_val),
         #validation_steps=len(X_val)
-        batch_size = 64
+        batch_size = 32
     )
     # Save the model
     model.save('cnn_binary_classifier.h5')
@@ -258,6 +258,7 @@ y_val_pred = (y_val_pred > 0.5).astype(int)
 # Calculate F1 score
 f1 = f1_score(y_val, y_val_pred)
 print(f"Learning rate: {learning_rate} Validation F1 Score: {f1}")
+model.save(f'cnn_binary_classifier_{f1:.4f}.h5')
 
 
 
